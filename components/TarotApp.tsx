@@ -1,9 +1,10 @@
-// components/TarotApp.tsx
 "use client";
 
 import React, { useMemo, useState } from "react";
 import { motion } from "framer-motion";
+import { generateLocal } from "../local-llm";
 
+// Simple deck (you can expand later)
 const BASE_DECK = [
   "The Fool",
   "The Magician",
@@ -26,11 +27,7 @@ const BASE_DECK = [
   "The Moon",
   "The Sun",
   "Judgement",
-  "The World",
-  "Ace of Wands",
-  "Ace of Cups",
-  "Ace of Swords",
-  "Ace of Pentacles",
+  "The World"
 ];
 
 const DECK_STYLES = {
@@ -57,54 +54,24 @@ const DECK_STYLES = {
   },
 } as const;
 
-type DeckKey = keyof typeof DECK_STYLES;
-
 const SPREADS = {
-  one: {
-    id: "one",
-    label: "1 Card – Simple Answer",
-    slots: 1,
-    description: "One clear message.",
-  },
-  three: {
-    id: "three",
-    label: "3 Cards – Past / Present / Future",
-    slots: 3,
-    description: "Timeline overview.",
-  },
-  nine: {
-    id: "nine",
-    label: "9 Cards – 3×3 Insight Grid",
-    slots: 9,
-    description: "Deeper multi-angle reading.",
-  },
-  celtic: {
-    id: "celtic",
-    label: "Celtic Cross – 10 Cards",
-    slots: 10,
-    description: "Full in-depth spread.",
-  },
+  one: { id: "one", label: "1 Card – Simple Answer", slots: 1 },
+  three: { id: "three", label: "3 Cards – Past/Present/Future", slots: 3 },
+  nine: { id: "nine", label: "9 Cards – Grid", slots: 9 },
 } as const;
 
-type SpreadKey = keyof typeof SPREADS;
-
-function shuffleArray<T>(arr: T[]): T[] {
-  return [...arr].sort(() => Math.random() - 0.5);
-}
-
 export default function TarotApp() {
-  const [deckStyle, setDeckStyle] = useState<DeckKey>("classic");
-  const [spread, setSpread] = useState<SpreadKey>("three");
+  const [deckStyle, setDeckStyle] = useState("classic");
+  const [spread, setSpread] = useState("three");
   const [question, setQuestion] = useState("");
-  const [shuffledDeck, setShuffledDeck] = useState<string[]>(() =>
-    shuffleArray(BASE_DECK)
+  const [shuffledDeck, setShuffledDeck] = useState(() =>
+    [...BASE_DECK].sort(() => Math.random() - 0.5)
   );
-  const [selectedIndexes, setSelectedIndexes] = useState<number[]>([]);
+  const [selectedIndexes, setSelectedIndexes] = useState([]);
   const [result, setResult] = useState("");
   const [loading, setLoading] = useState(false);
 
   const slots = SPREADS[spread].slots;
-
   const selectedCards = useMemo(
     () => selectedIndexes.map((i) => shuffledDeck[i]),
     [selectedIndexes, shuffledDeck]
@@ -112,365 +79,140 @@ export default function TarotApp() {
 
   const canInterpret = selectedCards.length === slots;
 
-  const handleShuffle = () => {
-    setShuffledDeck(shuffleArray(BASE_DECK));
+  const shuffle = () => {
+    setShuffledDeck([...BASE_DECK].sort(() => Math.random() - 0.5));
     setSelectedIndexes([]);
     setResult("");
   };
 
   const toggleCard = (index: number) => {
     if (selectedIndexes.includes(index)) {
-      setSelectedIndexes((prev) => prev.filter((i) => i !== index));
-      setResult("");
+      setSelectedIndexes(selectedIndexes.filter((i) => i !== index));
       return;
     }
     if (selectedIndexes.length >= slots) return;
-    setSelectedIndexes((prev) => [...prev, index]);
-    setResult("");
+    setSelectedIndexes([...selectedIndexes, index]);
   };
 
   const handleInterpret = async () => {
     if (!canInterpret) return;
+
     setLoading(true);
     setResult("");
+
+    const prompt = `
+User question: ${question || "General guidance"}
+Spread: ${spread}
+Deck style: ${deckStyle}
+Cards drawn: ${selectedCards.join(", ")}
+
+Write the reading in 3 clear parts:
+1) Meaning of each card (1–2 lines per card)
+2) Combined interpretation (max 10 lines)
+3) Final practical advice (3–5 bullet points)
+Tone: direct, no sugarcoating, brutally honest.
+`;
+
     try {
-      const res = await fetch("/api/interpret", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          question,
-          cards: selectedCards,
-          spread,
-          deckStyle,
-        }),
-      });
-
-      if (!res.ok) {
-        const text = await res.text();
-        setResult(
-          `API error ${res.status}. Raw response:\n\n${text || "(empty)"}`
-        );
-        return;
-      }
-
-      const data = await res.json();
-      setResult(
-        data.answer ||
-          "No interpretation returned from the AI. (answer field was empty)"
-      );
-    } catch (e: any) {
-      setResult("Client error. Could not reach the server.");
-    } finally {
-      setLoading(false);
+      const answer = await generateLocal(prompt);
+      setResult(answer);
+    } catch (e) {
+      setResult("Your browser does not support WebGPU. Try Chrome or Edge.");
     }
+
+    setLoading(false);
   };
 
-  const currentDeck = DECK_STYLES[deckStyle];
+  const style = DECK_STYLES[deckStyle];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black via-[#050314] to-black text-sm text-gray-100">
-      <div className="max-w-6xl mx-auto px-4 py-8 md:py-10">
-        {/* Header */}
-        <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
-              Mystic Tarot <span className="text-purple-400">✦ AI</span>
-            </h1>
-            <p className="text-sm text-gray-300 mt-1">
-              Choose your deck, pick a spread, breathe, then draw your cards.
-            </p>
-          </div>
+    <div className="min-h-screen bg-gradient-to-b from-black via-mysticBg to-black text-white p-4">
+      <h1 className="text-3xl font-bold mb-4">Mystic Tarot ✦ AI</h1>
 
-          <div className="flex flex-wrap gap-3">
-            {/* Deck selector */}
-            <div className="flex flex-col text-xs">
-              <span className="mb-1 text-gray-300">Deck style</span>
-              <select
-                value={deckStyle}
-                onChange={(e) => {
-                  setDeckStyle(e.target.value as DeckKey);
-                  setSelectedIndexes([]);
-                  setResult("");
-                }}
-                className="bg-[#12091f] border border-purple-500/60 rounded-xl px-3 py-2 text-sm"
-              >
-                {Object.values(DECK_STYLES).map((ds) => (
-                  <option key={ds.id} value={ds.id}>
-                    {ds.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+      {/* Deck & Spread selectors */}
+      <div className="flex gap-4 mb-6">
+        <select
+          className="bg-black/50 p-2 rounded border border-gray-600"
+          value={deckStyle}
+          onChange={(e) => {
+            setDeckStyle(e.target.value);
+            setSelectedIndexes([]);
+            setResult("");
+          }}
+        >
+          {Object.values(DECK_STYLES).map((d) => (
+            <option value={d.id} key={d.id}>
+              {d.label}
+            </option>
+          ))}
+        </select>
 
-            {/* Spread selector */}
-            <div className="flex flex-col text-xs">
-              <span className="mb-1 text-gray-300">Spread</span>
-              <select
-                value={spread}
-                onChange={(e) => {
-                  setSpread(e.target.value as SpreadKey);
-                  setSelectedIndexes([]);
-                  setResult("");
-                }}
-                className="bg-[#12091f] border border-purple-500/60 rounded-xl px-3 py-2 text-sm"
-              >
-                {Object.values(SPREADS).map((sp) => (
-                  <option key={sp.id} value={sp.id}>
-                    {sp.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+        <select
+          className="bg-black/50 p-2 rounded border border-gray-600"
+          value={spread}
+          onChange={(e) => {
+            setSpread(e.target.value);
+            setSelectedIndexes([]);
+            setResult("");
+          }}
+        >
+          {Object.values(SPREADS).map((s) => (
+            <option value={s.id} key={s.id}>
+              {s.label}
+            </option>
+          ))}
+        </select>
 
-            {/* Shuffle */}
-            <button
-              onClick={handleShuffle}
-              className="self-end md:self-center bg-gray-900/70 border border-purple-500/60 rounded-xl px-4 py-2 text-sm hover:bg-gray-800 transition"
+        <button
+          onClick={shuffle}
+          className="bg-purple-700 px-4 rounded hover:bg-purple-600 transition"
+        >
+          Shuffle
+        </button>
+      </div>
+
+      {/* Question */}
+      <input
+        className="w-full bg-black/40 border border-gray-600 p-2 rounded mb-6"
+        placeholder="Your question (optional)"
+        value={question}
+        onChange={(e) => setQuestion(e.target.value)}
+      />
+
+      {/* Deck */}
+      <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-7 gap-3 mb-8">
+        {shuffledDeck.map((name, idx) => {
+          const selected = selectedIndexes.includes(idx);
+          return (
+            <motion.button
+              key={idx}
+              onClick={() => toggleCard(idx)}
+              whileHover={{ scale: 1.05 }}
+              className={`aspect-[3/5] rounded-xl text-xs flex items-center justify-center ${
+                selected
+                  ? `bg-gradient-to-br ${style.faceGradient} border-2 ${style.border}`
+                  : `bg-gradient-to-br ${style.backGradient}`
+              }`}
             >
-              Shuffle deck
-            </button>
-          </div>
-        </header>
+              {selected ? name : "Tap"}
+            </motion.button>
+          );
+        })}
+      </div>
 
-        {/* Question + guidance */}
-        <section className="grid gap-4 md:grid-cols-[minmax(0,2fr)_minmax(0,1.5fr)] mb-8">
-          <div className="bg-[#12091f] border border-purple-500/30 rounded-2xl p-4">
-            <label className="block text-xs text-gray-300 mb-2">
-              Your question (optional)
-            </label>
-            <input
-              value={question}
-              onChange={(e) => setQuestion(e.target.value)}
-              placeholder="Example: What should I focus on in the next 3 months?"
-              className="w-full bg-black/60 border border-purple-500/40 rounded-xl px-3 py-2 text-sm outline-none focus:border-purple-400"
-            />
-            <p className="text-[11px] text-gray-400 mt-2">
-              You can leave this empty for a general message.
-            </p>
-          </div>
+      {/* Interpret Button */}
+      <button
+        disabled={!canInterpret || loading}
+        onClick={handleInterpret}
+        className="bg-mysticAccent text-black font-bold px-6 py-2 rounded-xl disabled:bg-gray-700 mb-6"
+      >
+        {loading ? "Interpreting..." : "Get interpretation"}
+      </button>
 
-          <div className="bg-gradient-to-br from-purple-900/60 via-[#12091f] to-slate-900/70 border border-purple-500/50 rounded-2xl p-4 text-xs">
-            <p className="text-[11px] text-gray-200 font-semibold mb-2">
-              Before you pick your cards:
-            </p>
-            <ul className="space-y-1 text-[11px] text-gray-300">
-              <li>• Take a slow breath in… and out.</li>
-              <li>• Bring your question or intention to mind.</li>
-              <li>• Drop any obsession about a specific outcome.</li>
-              <li>• When you feel ready, close your eyes for a moment…</li>
-              <li>• Then open them and choose the cards you feel drawn to.</li>
-            </ul>
-          </div>
-        </section>
-
-        {/* Deck visual */}
-        <section className="mb-8">
-          <div className="flex items-baseline justify-between mb-3">
-            <div>
-              <h2 className="text-lg font-semibold">
-                Pick {slots} card{slots > 1 ? "s" : ""} from the deck
-              </h2>
-              <p className="text-[11px] text-gray-400">
-                Spread: {SPREADS[spread].description}
-              </p>
-            </div>
-            <p className="text-[11px] text-gray-400">
-              Selected:{" "}
-              <span className="text-purple-400">
-                {selectedCards.length}/{slots}
-              </span>
-            </p>
-          </div>
-
-          <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-7 gap-3">
-            {shuffledDeck.map((name, index) => {
-              const selected = selectedIndexes.includes(index);
-              return (
-                <Card
-                  key={index}
-                  name={name}
-                  selected={selected}
-                  deckStyle={currentDeck}
-                  onClick={() => toggleCard(index)}
-                />
-              );
-            })}
-          </div>
-        </section>
-
-        {/* Spread layout */}
-        <section className="mb-8">
-          <h2 className="text-lg font-semibold mb-3">Spread layout</h2>
-          <SpreadLayout spread={spread} cards={selectedCards} />
-        </section>
-
-        {/* Interpret + result */}
-        <section className="mb-10">
-          <div className="flex items-center gap-3 mb-4">
-            <button
-              onClick={handleInterpret}
-              disabled={!canInterpret || loading}
-              className="bg-purple-500 disabled:bg-gray-700 text-white text-sm font-semibold px-5 py-2 rounded-xl hover:bg-purple-400 transition"
-            >
-              {loading ? "Interpreting..." : "Get interpretation"}
-            </button>
-            {!canInterpret && (
-              <span className="text-[11px] text-gray-400">
-                Select {slots} card{slots > 1 ? "s" : ""} to continue.
-              </span>
-            )}
-          </div>
-
-          <div className="bg-black/60 border border-purple-500/30 rounded-2xl p-4 min-h-[110px] text-sm">
-            {result ? (
-              <pre className="whitespace-pre-wrap text-gray-100 text-[13px] leading-relaxed">
-                {result}
-              </pre>
-            ) : (
-              <p className="text-[12px] text-gray-400">
-                Your AI interpretation will appear here once you have chosen all
-                your cards and clicked{" "}
-                <span className="text-purple-400">Get interpretation</span>.
-              </p>
-            )}
-          </div>
-        </section>
-
-        <footer className="text-[11px] text-gray-500 text-center pb-4">
-          For reflection and entertainment only. Not professional advice.
-        </footer>
+      {/* Result */}
+      <div className="bg-black/40 border border-gray-700 p-4 rounded-xl min-h-[150px] whitespace-pre-wrap text-sm">
+        {result || "Your reading will appear here."}
       </div>
     </div>
   );
-}
-
-function Card({
-  name,
-  selected,
-  deckStyle,
-  onClick,
-}: {
-  name: string;
-  selected: boolean;
-  deckStyle: (typeof DECK_STYLES)[DeckKey];
-  onClick: () => void;
-}) {
-  return (
-    <motion.button
-      onClick={onClick}
-      whileHover={{ y: -4, scale: 1.02 }}
-      whileTap={{ scale: 0.97 }}
-      className="relative w-full aspect-[3/5] rounded-2xl focus:outline-none"
-    >
-      <div
-        className={`absolute inset-0 rounded-2xl p-[2px] ${
-          selected ? "shadow-[0_0_25px_rgba(168,85,247,0.6)]" : ""
-        }`}
-      >
-        <div
-          className={`w-full h-full rounded-2xl bg-gradient-to-br ${
-            selected ? deckStyle.faceGradient : deckStyle.backGradient
-          } ${deckStyle.border}`}
-        >
-          <div className="w-full h-full rounded-2xl bg-black/60 flex items-center justify-center px-2">
-            {selected ? (
-              <motion.div
-                initial={{ rotateY: 180 }}
-                animate={{ rotateY: 0 }}
-                transition={{ duration: 0.4 }}
-                className="text-[11px] text-center text-gray-100 font-medium"
-              >
-                {name}
-              </motion.div>
-            ) : (
-              <motion.div className="flex flex-col items-center gap-1 text-[10px] text-purple-200/80">
-                <span className="text-xl">✦</span>
-                <span>Tap to draw</span>
-              </motion.div>
-            )}
-          </div>
-        </div>
-      </div>
-    </motion.button>
-  );
-}
-
-function SpreadLayout({
-  spread,
-  cards,
-}: {
-  spread: SpreadKey;
-  cards: string[];
-}) {
-  const slots = SPREADS[spread].slots;
-  const renderSlot = (idx: number, label?: string) => {
-    const card = cards[idx];
-    return (
-      <div
-        key={idx}
-        className="w-20 sm:w-24 aspect-[3/5] border border-purple-500/40 rounded-xl bg-[#12091f] flex flex-col items-center justify-center text-[10px] text-gray-300"
-      >
-        {card ? (
-          <>
-            <div className="text-[9px] text-purple-400 mb-1">
-              {label || `Card ${idx + 1}`}
-            </div>
-            <div className="px-1 text-[10px] text-center">{card}</div>
-          </>
-        ) : (
-          <span className="opacity-60">{label || `Card ${idx + 1}`}</span>
-        )}
-      </div>
-    );
-  };
-
-  if (spread === "one") {
-    return <div className="flex justify-center">{renderSlot(0, "Message")}</div>;
-  }
-
-  if (spread === "three") {
-    return (
-      <div className="flex justify-center gap-3 sm:gap-4">
-        {renderSlot(0, "Past")}
-        {renderSlot(1, "Present")}
-        {renderSlot(2, "Future")}
-      </div>
-    );
-  }
-
-  if (spread === "nine") {
-    return (
-      <div className="grid grid-cols-3 gap-3 sm:gap-4 justify-items-center">
-        {Array.from({ length: 9 }).map((_, i) => renderSlot(i))}
-      </div>
-    );
-  }
-
-  // Celtic Cross (10 cards)
-  if (spread === "celtic") {
-    return (
-      <div className="grid grid-cols-[repeat(4,minmax(0,1fr))] gap-3 sm:gap-4 justify-items-center max-w-xl">
-        <div className="col-span-2 row-span-2 flex items-center justify-center">
-          {renderSlot(0, "Present")}
-        </div>
-        <div className="col-span-2 row-span-2 flex items-center justify-center">
-          {renderSlot(1, "Challenge")}
-        </div>
-        <div className="col-span-1">{renderSlot(2, "Past")}</div>
-        <div className="col-span-1">{renderSlot(3, "Future")}</div>
-        <div className="col-span-1">{renderSlot(4, "Above")}</div>
-        <div className="col-span-1">{renderSlot(5, "Below")}</div>
-        <div className="col-start-4 row-span-1">{renderSlot(6, "Self")}</div>
-        <div className="col-start-4 row-span-1">
-          {renderSlot(7, "Environment")}
-        </div>
-        <div className="col-start-4 row-span-1">
-          {renderSlot(8, "Hopes / Fears")}
-        </div>
-        <div className="col-start-4 row-span-1">{renderSlot(9, "Outcome")}</div>
-      </div>
-    );
-  }
-
-  return null;
 }
