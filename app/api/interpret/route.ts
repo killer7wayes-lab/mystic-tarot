@@ -5,19 +5,18 @@ export async function POST(req: Request) {
     const { question, cards } = await req.json();
 
     const prompt = `
-You are an expert tarot reader. 
-You speak directly, with no sugarcoating. 
-You give clear, structured, emotionally honest insights.
+You are an expert tarot reader.
+Speak directly, honestly, and without sugarcoating.
+Give clear, structured insights.
 
 User question: ${question || "General guidance"}
-Cards drawn: ${cards?.join(", ")}
+Cards drawn: ${Array.isArray(cards) ? cards.join(", ") : "None"}
 
-For each spread:
-- Interpret each card individually (short and direct)
-- Then give a combined reading that connects the cards
-- Then give final advice: what should the user do next?
-
-Keep the tone: direct, grounded, confident. No clichés, no generic spiritual fluff.
+Instructions:
+1. Interpret each card individually (short & direct).
+2. Give a combined meaning (how the cards interact).
+3. Give final advice: what should the user do next?
+4. Tone: grounded, confident, no fluffy clichés.
 `;
 
     const response = await fetch("https://api.deepseek.com/chat/completions", {
@@ -34,18 +33,37 @@ Keep the tone: direct, grounded, confident. No clichés, no generic spiritual fl
       }),
     });
 
+    // If Deepseek fails, we still return a valid JSON to the frontend
+    if (!response.ok) {
+      const errText = await response.text().catch(() => "");
+      console.error("Deepseek error:", response.status, errText);
+      return NextResponse.json(
+        {
+          success: false,
+          answer:
+            "The AI service failed to respond. Please check your API key or try again later.",
+        },
+        { status: 200 }
+      );
+    }
+
     const data = await response.json();
 
-    return NextResponse.json({
-      success: true,
-      answer: data.choices?.[0]?.message?.content || "No response from AI",
-    });
-  } catch (err) {
-    console.error(err);
     return NextResponse.json(
-      { success: false, error: "Failed to get interpretation" },
-      { status: 500 }
+      {
+        success: true,
+        answer: data.choices?.[0]?.message?.content || "No response from AI.",
+      },
+      { status: 200 }
+    );
+  } catch (err) {
+    console.error("Route /api/interpret crashed:", err);
+    return NextResponse.json(
+      {
+        success: false,
+        answer: "Server error while interpreting the cards.",
+      },
+      { status: 200 }
     );
   }
 }
-
