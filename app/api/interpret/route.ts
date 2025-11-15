@@ -6,18 +6,17 @@ export async function POST(req: Request) {
 
     const prompt = `
 You are an expert tarot reader. 
-You speak directly, with no sugarcoating. 
-You give clear, structured, emotionally honest insights.
+Speak directly, honestly, and without sugarcoating.
+Give clear, structured insights.
 
 User question: ${question || "General guidance"}
 Cards drawn: ${cards?.join(", ")}
 
-For each spread:
-- Interpret each card individually (short and direct)
-- Then give a combined reading that connects the cards
-- Then give final advice: what should the user do next?
-
-Keep the tone: direct, grounded, confident. No clichés, no generic spiritual fluff.
+Instructions:
+1. Interpret each card individually (short & direct)
+2. Give a combined meaning (how the cards interact)
+3. Give final advice: what should the user do next?
+4. Keep the tone grounded, confident, and realistic.
 `;
 
     const response = await fetch("https://api.deepseek.com/chat/completions", {
@@ -50,9 +49,4 @@ Keep the tone: direct, grounded, confident. No clichés, no generic spiritual fl
       { status: 500 }
     );
   }
-}
-
-Remember: the cards highlight energy and possibilities – you always keep your free will.`;
-
-  return NextResponse.json({ text });
 }
