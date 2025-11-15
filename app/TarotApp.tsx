@@ -3,64 +3,57 @@
 import { useState } from "react";
 
 export default function TarotApp() {
-  const [selectedCards, setSelectedCards] = useState<any[]>([]);
-  const [reading, setReading] = useState<string>("");
+  const [cards, setCards] = useState<string[]>([]);
+  const [reading, setReading] = useState("");
 
-  // Simple fake local “AI” generator
-  function generateInterpretation(cards: string[]) {
-    return `
-Here’s your reading:
-
-1. **Card meanings**
-${cards.map(c => `- **${c}**: A symbol of energy, change, intuition, and personal growth.`).join("\n")}
-
-2. **Combined Story**
-These cards together suggest transformation, inner guidance, and important decisions coming into your life.
-
-3. **Advice**
-Stay grounded, trust your intuition, and follow the path that aligns with long-term stability.
-    `;
-  }
-
-  const allCards = [
-    "The Fool", "The Magician", "The High Priestess", "The Empress", "The Emperor",
-    "The Lovers", "The Chariot", "Strength", "The Hermit", "Wheel of Fortune",
-    "Justice", "The Hanged Man", "Death", "Temperance", "The Devil",
-    "The Tower", "The Star", "The Moon", "The Sun", "Judgement", "The World"
+  const deck = [
+    "The Fool", "The Magician", "The High Priestess", "The Empress",
+    "The Emperor", "The Lovers", "The Chariot", "Strength", "The Hermit",
+    "Wheel of Fortune", "Justice", "The Hanged Man", "Death", "Temperance",
+    "The Devil", "The Tower", "The Star", "The Moon", "The Sun",
+    "Judgement", "The World"
   ];
 
-  function drawThree() {
+  function drawCards() {
     const drawn = [];
     while (drawn.length < 3) {
-      const card = allCards[Math.floor(Math.random() * allCards.length)];
+      const card = deck[Math.floor(Math.random() * deck.length)];
       if (!drawn.includes(card)) drawn.push(card);
     }
-    setSelectedCards(drawn);
-    setReading(generateInterpretation(drawn));
+    setCards(drawn);
+
+    setReading(
+`Your reading:
+
+1. Card meanings:
+${drawn.map(c => `– ${c}: A sign of inner change and guidance.`).join("\n")}
+
+2. Combined Story:
+Your energy is shifting. Trust your intuition and prepare for growth.
+
+3. Advice:
+Stay grounded and move with purpose.`
+    );
   }
 
   return (
-    <div style={{ padding: "20px", color: "white" }}>
-      <h1 style={{ fontSize: "28px", fontWeight: "bold" }}>Mystic Tarot</h1>
+    <div className="text-white max-w-3xl">
+      <h1 className="text-4xl font-bold mb-8">Mystic Tarot</h1>
 
       <button
-        onClick={drawThree}
-        style={{
-          marginTop: "20px",
-          padding: "10px 20px",
-          background: "#6a4cff",
-          borderRadius: "8px"
-        }}
+        onClick={drawCards}
+        className="bg-purple-600 hover:bg-purple-700 px-6 py-3 rounded-lg text-lg"
       >
         Draw Cards
       </button>
 
-      {selectedCards.length > 0 && (
-        <div style={{ marginTop: "20px" }}>
-          <h2>Your Cards:</h2>
-          <div>
-            {selectedCards.map((c, i) => (
-              <div key={i} style={{ marginTop: "8px" }}>
+      {cards.length > 0 && (
+        <div className="mt-8">
+          <h2 className="text-2xl font-semibold mb-4">Your Cards:</h2>
+
+          <div className="flex gap-4">
+            {cards.map((c, i) => (
+              <div key={i} className="bg-white/10 p-4 rounded-lg">
                 {c}
               </div>
             ))}
@@ -69,15 +62,7 @@ Stay grounded, trust your intuition, and follow the path that aligns with long-t
       )}
 
       {reading && (
-        <pre
-          style={{
-            marginTop: "20px",
-            whiteSpace: "pre-wrap",
-            background: "rgba(255,255,255,0.1)",
-            padding: "15px",
-            borderRadius: "10px"
-          }}
-        >
+        <pre className="mt-8 bg-white/10 p-6 rounded-lg whitespace-pre-wrap">
           {reading}
         </pre>
       )}
