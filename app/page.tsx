@@ -1,5 +1,5 @@
 "use client";
-import TarotApp from "../components/TarotApp";
+import TarotApp from "./components/TarotApp";
 
 export default function Page() {
   return <TarotApp />;
