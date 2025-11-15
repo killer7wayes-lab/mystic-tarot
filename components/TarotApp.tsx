@@ -1,9 +1,9 @@
+// components/TarotApp.tsx
 "use client";
 
 import React, { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 
-// Simple text-only tarot deck
 const BASE_DECK = [
   "The Fool",
   "The Magician",
@@ -129,13 +129,10 @@ export default function TarotApp() {
     setResult("");
   };
 
-  // 🔥 FIXED — FULL ERROR HANDLING + NEVER "Something went wrong" blindly
   const handleInterpret = async () => {
     if (!canInterpret) return;
-
     setLoading(true);
     setResult("");
-
     try {
       const res = await fetch("/api/interpret", {
         method: "POST",
@@ -148,30 +145,21 @@ export default function TarotApp() {
         }),
       });
 
-      const data = await res.json().catch(() => null);
-
       if (!res.ok) {
+        const text = await res.text();
         setResult(
-          data?.answer ||
-            `API error (${res.status}). The server could not interpret the cards.`
+          `API error ${res.status}. Raw response:\n\n${text || "(empty)"}`
         );
         return;
       }
 
-      if (!data || data.success === false) {
-        setResult(
-          data?.answer ||
-            "The AI returned an empty response. Check your API key or backend."
-        );
-        return;
-      }
-
-      setResult(data.answer || "No interpretation received.");
-    } catch (err) {
-      console.error(err);
+      const data = await res.json();
       setResult(
-        "Network error while contacting the AI server. Check your API route."
+        data.answer ||
+          "No interpretation returned from the AI. (answer field was empty)"
       );
+    } catch (e: any) {
+      setResult("Client error. Could not reach the server.");
     } finally {
       setLoading(false);
     }
@@ -180,14 +168,13 @@ export default function TarotApp() {
   const currentDeck = DECK_STYLES[deckStyle];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black via-mysticBg to-black">
+    <div className="min-h-screen bg-gradient-to-b from-black via-[#050314] to-black text-sm text-gray-100">
       <div className="max-w-6xl mx-auto px-4 py-8 md:py-10">
-        
-        {/* HEADER */}
+        {/* Header */}
         <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
           <div>
             <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
-              Mystic Tarot <span className="text-mysticAccent">✦ AI</span>
+              Mystic Tarot <span className="text-purple-400">✦ AI</span>
             </h1>
             <p className="text-sm text-gray-300 mt-1">
               Choose your deck, pick a spread, breathe, then draw your cards.
@@ -205,7 +192,7 @@ export default function TarotApp() {
                   setSelectedIndexes([]);
                   setResult("");
                 }}
-                className="bg-mysticCard/80 border border-mysticAccentSoft/60 rounded-xl px-3 py-2 text-sm shadow-mystic-card"
+                className="bg-[#12091f] border border-purple-500/60 rounded-xl px-3 py-2 text-sm"
               >
                 {Object.values(DECK_STYLES).map((ds) => (
                   <option key={ds.id} value={ds.id}>
@@ -225,7 +212,7 @@ export default function TarotApp() {
                   setSelectedIndexes([]);
                   setResult("");
                 }}
-                className="bg-mysticCard/80 border border-mysticAccentSoft/60 rounded-xl px-3 py-2 text-sm shadow-mystic-card"
+                className="bg-[#12091f] border border-purple-500/60 rounded-xl px-3 py-2 text-sm"
               >
                 {Object.values(SPREADS).map((sp) => (
                   <option key={sp.id} value={sp.id}>
@@ -235,18 +222,19 @@ export default function TarotApp() {
               </select>
             </div>
 
+            {/* Shuffle */}
             <button
               onClick={handleShuffle}
-              className="self-end md:self-center bg-gray-900/70 border border-mysticAccentSoft/60 rounded-xl px-4 py-2 text-sm hover:bg-gray-800 transition"
+              className="self-end md:self-center bg-gray-900/70 border border-purple-500/60 rounded-xl px-4 py-2 text-sm hover:bg-gray-800 transition"
             >
               Shuffle deck
             </button>
           </div>
         </header>
 
-        {/* QUESTION SECTION */}
+        {/* Question + guidance */}
         <section className="grid gap-4 md:grid-cols-[minmax(0,2fr)_minmax(0,1.5fr)] mb-8">
-          <div className="bg-mysticCard/80 border border-mysticAccentSoft/40 rounded-2xl p-4 shadow-mystic-card">
+          <div className="bg-[#12091f] border border-purple-500/30 rounded-2xl p-4">
             <label className="block text-xs text-gray-300 mb-2">
               Your question (optional)
             </label>
@@ -254,33 +242,33 @@ export default function TarotApp() {
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
               placeholder="Example: What should I focus on in the next 3 months?"
-              className="w-full bg-black/60 border border-mysticAccentSoft/40 rounded-xl px-3 py-2 text-sm outline-none focus:border-mysticAccentSoft"
+              className="w-full bg-black/60 border border-purple-500/40 rounded-xl px-3 py-2 text-sm outline-none focus:border-purple-400"
             />
             <p className="text-[11px] text-gray-400 mt-2">
               You can leave this empty for a general message.
             </p>
           </div>
 
-          <div className="bg-gradient-to-br from-purple-900/60 via-mysticCard/80 to-slate-900/70 border border-mysticAccentSoft/50 rounded-2xl p-4 text-xs shadow-mystic-card">
+          <div className="bg-gradient-to-br from-purple-900/60 via-[#12091f] to-slate-900/70 border border-purple-500/50 rounded-2xl p-4 text-xs">
             <p className="text-[11px] text-gray-200 font-semibold mb-2">
               Before you pick your cards:
             </p>
             <ul className="space-y-1 text-[11px] text-gray-300">
               <li>• Take a slow breath in… and out.</li>
-              <li>• Gently bring your question to mind.</li>
-              <li>• Let go of overthinking any specific outcome.</li>
-              <li>• When you're ready, close your eyes briefly…</li>
-              <li>• Then choose the cards you feel drawn to.</li>
+              <li>• Bring your question or intention to mind.</li>
+              <li>• Drop any obsession about a specific outcome.</li>
+              <li>• When you feel ready, close your eyes for a moment…</li>
+              <li>• Then open them and choose the cards you feel drawn to.</li>
             </ul>
           </div>
         </section>
 
-        {/* DECK VISUAL */}
+        {/* Deck visual */}
         <section className="mb-8">
           <div className="flex items-baseline justify-between mb-3">
             <div>
               <h2 className="text-lg font-semibold">
-                Pick {slots} card{slots > 1 ? "s" : ""}
+                Pick {slots} card{slots > 1 ? "s" : ""} from the deck
               </h2>
               <p className="text-[11px] text-gray-400">
                 Spread: {SPREADS[spread].description}
@@ -288,7 +276,7 @@ export default function TarotApp() {
             </div>
             <p className="text-[11px] text-gray-400">
               Selected:{" "}
-              <span className="text-mysticAccent">
+              <span className="text-purple-400">
                 {selectedCards.length}/{slots}
               </span>
             </p>
@@ -310,19 +298,19 @@ export default function TarotApp() {
           </div>
         </section>
 
-        {/* SPREAD LAYOUT */}
+        {/* Spread layout */}
         <section className="mb-8">
           <h2 className="text-lg font-semibold mb-3">Spread layout</h2>
           <SpreadLayout spread={spread} cards={selectedCards} />
         </section>
 
-        {/* INTERPRETATION */}
+        {/* Interpret + result */}
         <section className="mb-10">
           <div className="flex items-center gap-3 mb-4">
             <button
               onClick={handleInterpret}
               disabled={!canInterpret || loading}
-              className="bg-mysticAccent disabled:bg-gray-700 text-white text-sm font-semibold px-5 py-2 rounded-xl shadow-mystic-card hover:bg-mysticAccentSoft transition disabled:cursor-not-allowed"
+              className="bg-purple-500 disabled:bg-gray-700 text-white text-sm font-semibold px-5 py-2 rounded-xl hover:bg-purple-400 transition"
             >
               {loading ? "Interpreting..." : "Get interpretation"}
             </button>
@@ -333,16 +321,16 @@ export default function TarotApp() {
             )}
           </div>
 
-          <div className="bg-black/60 border border-mysticAccentSoft/30 rounded-2xl p-4 min-h-[110px] text-sm">
+          <div className="bg-black/60 border border-purple-500/30 rounded-2xl p-4 min-h-[110px] text-sm">
             {result ? (
               <pre className="whitespace-pre-wrap text-gray-100 text-[13px] leading-relaxed">
                 {result}
               </pre>
             ) : (
               <p className="text-[12px] text-gray-400">
-                Your AI interpretation will appear here after choosing your
-                cards and clicking{" "}
-                <span className="text-mysticAccent">Get interpretation</span>.
+                Your AI interpretation will appear here once you have chosen all
+                your cards and clicked{" "}
+                <span className="text-purple-400">Get interpretation</span>.
               </p>
             )}
           </div>
@@ -356,9 +344,6 @@ export default function TarotApp() {
   );
 }
 
-/* ----------------------
-   CARD COMPONENT
------------------------ */
 function Card({
   name,
   selected,
@@ -379,7 +364,7 @@ function Card({
     >
       <div
         className={`absolute inset-0 rounded-2xl p-[2px] ${
-          selected ? "shadow-mystic-card" : ""
+          selected ? "shadow-[0_0_25px_rgba(168,85,247,0.6)]" : ""
         }`}
       >
         <div
@@ -410,9 +395,6 @@ function Card({
   );
 }
 
-/* ----------------------
-   SPREAD LAYOUT
------------------------ */
 function SpreadLayout({
   spread,
   cards,
@@ -421,17 +403,16 @@ function SpreadLayout({
   cards: string[];
 }) {
   const slots = SPREADS[spread].slots;
-
   const renderSlot = (idx: number, label?: string) => {
     const card = cards[idx];
     return (
       <div
         key={idx}
-        className="w-20 sm:w-24 aspect-[3/5] border border-mysticAccentSoft/40 rounded-xl bg-mysticCard/70 flex flex-col items-center justify-center text-[10px] text-gray-300"
+        className="w-20 sm:w-24 aspect-[3/5] border border-purple-500/40 rounded-xl bg-[#12091f] flex flex-col items-center justify-center text-[10px] text-gray-300"
       >
         {card ? (
           <>
-            <div className="text-[9px] text-mysticAccent mb-1">
+            <div className="text-[9px] text-purple-400 mb-1">
               {label || `Card ${idx + 1}`}
             </div>
             <div className="px-1 text-[10px] text-center">{card}</div>
@@ -465,6 +446,7 @@ function SpreadLayout({
     );
   }
 
+  // Celtic Cross (10 cards)
   if (spread === "celtic") {
     return (
       <div className="grid grid-cols-[repeat(4,minmax(0,1fr))] gap-3 sm:gap-4 justify-items-center max-w-xl">
@@ -479,8 +461,12 @@ function SpreadLayout({
         <div className="col-span-1">{renderSlot(4, "Above")}</div>
         <div className="col-span-1">{renderSlot(5, "Below")}</div>
         <div className="col-start-4 row-span-1">{renderSlot(6, "Self")}</div>
-        <div className="col-start-4 row-span-1">{renderSlot(7, "Environment")}</div>
-        <div className="col-start-4 row-span-1">{renderSlot(8, "Hopes / Fears")}</div>
+        <div className="col-start-4 row-span-1">
+          {renderSlot(7, "Environment")}
+        </div>
+        <div className="col-start-4 row-span-1">
+          {renderSlot(8, "Hopes / Fears")}
+        </div>
         <div className="col-start-4 row-span-1">{renderSlot(9, "Outcome")}</div>
       </div>
     );
@@ -488,4 +474,3 @@ function SpreadLayout({
 
   return null;
 }
-
