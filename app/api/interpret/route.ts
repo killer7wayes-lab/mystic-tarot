@@ -1,4 +1,6 @@
 // app/api/interpret/route.ts
+export const runtime = "nodejs";
+
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
@@ -27,22 +29,19 @@ Cards drawn: ${cards.join(", ")}
 3) Final advice: 3–5 bullet points of what the user should do or focus on next.
 `;
 
-    const response = await fetch(
-      "https://api.deepseek.com/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "deepseek-chat",
-          messages: [{ role: "user", content: prompt }],
-          temperature: 0.8,
-          max_tokens: 800,
-        }),
-      }
-    );
+    const response = await fetch("https://api.deepseek.com/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "deepseek-chat",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.8,
+        max_tokens: 800,
+      }),
+    });
 
     if (!response.ok) {
       const text = await response.text();
@@ -70,4 +69,8 @@ Cards drawn: ${cards.join(", ")}
       { status: 500 }
     );
   }
+}
+
+export function GET() {
+  return NextResponse.json({ error: "Method Not Allowed" }, { status: 405 });
 }
