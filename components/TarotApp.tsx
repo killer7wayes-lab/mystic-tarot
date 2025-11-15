@@ -146,7 +146,7 @@ export default function TarotApp() {
         })
       });
       const data = await res.json();
-      setResult(data.text || "No interpretation.");
+      setResult(data.answer || "No interpretation.");
     } catch (e) {
       setResult("Something went wrong. Please try again.");
     } finally {
