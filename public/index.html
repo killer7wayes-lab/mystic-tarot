@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mystic AI Tarot</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- 1. CLASSIC BACKGROUND -->
+    <div class="theme-bg classic-bg active">
+        <div class="celestial-wrapper">
+            <i class="fas fa-sun big-sun"></i>
+            <i class="fas fa-moon big-moon"></i>
+            <i class="fas fa-star big-star star-1"></i>
+            <i class="fas fa-star big-star star-2"></i>
+            <i class="fas fa-star big-star star-3"></i>
+        </div>
+    </div>
+
+    <!-- 2. ANIME BACKGROUND -->
+    <div class="theme-bg anime-bg">
+        <i class="fas fa-certificate anime-sparkle s-1"></i>
+        <i class="fas fa-certificate anime-sparkle s-2"></i>
+        <i class="fas fa-cloud anime-cloud"></i>
+    </div>
+
+    <!-- 3. GOTH BACKGROUND -->
+    <div class="theme-bg goth-bg"></div>
+
+    <!-- MAIN APP CONTAINER -->
+    <div class="main-glass-panel">
+        <header>
+            <button id="back-btn" class="nav-btn hidden" onclick="goBack()">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            
+            <h1 onclick="location.reload()" title="Reset Reading">Mystic AI Tarot</h1>
+            
+            <div id="deck-indicator" class="hidden">
+                <span id="current-theme">Classic</span>
+            </div>
+        </header>
+
+        <!-- STEP 1: CHOOSE DECK -->
+        <section id="step-1" class="step active">
+            <h3 class="section-title">
+                <span style="font-family: 'Playfair Display', serif; font-style: italic; font-size: 0.9em; display:block; margin-bottom:5px; opacity:0.8;">Let The Cards Guide You</span>
+                Choose Your Deck
+            </h3>
+            
+            <div class="cards-grid">
+                <div class="choice-card" onclick="selectDeck('Classic')">
+                    <div class="icon">🔮</div>
+                    <span>Classic</span>
+                </div>
+                <div class="choice-card" onclick="selectDeck('Anime')">
+                    <div class="icon">🌸</div>
+                    <span>Anime</span>
+                </div>
+                <div class="choice-card" onclick="selectDeck('Goth')">
+                    <div class="icon">🦇</div>
+                    <span>Goth</span>
+                </div>
+            </div>
+
+            <div class="footer-disclaimer">
+                <p>✨ Powered by <strong>Fisher-Yates</strong> True Random Shuffling.</p>
+                <p class="sub-disclaimer">This is for entertainment purposes only.<br>You create your own destiny.</p>
+            </div>
+        </section>
+
+        <!-- STEP 2: SPREAD -->
+        <section id="step-2" class="step">
+            <h3 class="section-title">Select Spread Type</h3>
+            <div class="list-options">
+                <button onclick="selectSpread('1 Card Pull', 1)">🃏 Single Card Guidance</button>
+                <button onclick="selectSpread('3 Card Spread', 3)">⏳ Past, Present, Future</button>
+                <button onclick="selectSpread('Mind Body Spirit', 3)">🧘 Mind, Body, Spirit</button>
+                <button onclick="selectSpread('Career & Wealth', 3)">💰 Career & Wealth</button>
+                <button onclick="selectSpread('Love & Connection', 3)">❤️ Love & Connection</button>
+                <button onclick="selectSpread('Horseshoe Spread', 7)">🧲 The Horseshoe (Life Path)</button>
+                <button onclick="selectSpread('9 Card Destiny Grid', 9)">🌌 9 Card Destiny Grid</button>
+                <button onclick="selectSpread('Celtic Cross', 10)">✨ Celtic Cross (Deep Analysis)</button>
+            </div>
+        </section>
+
+        <!-- STEP 3: BREATHE -->
+        <section id="step-3" class="step">
+            <div class="meditation-container">
+                <div class="eye-wrapper">
+                    <div class="pulse-ring"></div>
+                    <i class="far fa-eye eye-icon"></i>
+                </div>
+                <h2 class="meditation-title">"Breathe."</h2>
+                <p class="meditation-sub">
+                    Close your eyes. Visualize your question.<br>
+                    When you feel the pull, proceed.
+                </p>
+                <input type="text" id="user-question" class="ghost-input" placeholder="Type your question (Optional)..." autocomplete="off">
+                <button class="btn-outline" onclick="startPulling()">I Am Ready</button>
+            </div>
+        </section>
+
+        <!-- STEP 4: PULL CARDS -->
+        <section id="step-4" class="step">
+            <div class="ritual-container">
+                <h3 class="ritual-title">The Fates Await</h3>
+                <div class="controls-row">
+                    <p class="ritual-sub">Cards remaining: <span id="cards-left" class="counter-glow">0</span></p>
+                    <button class="mini-btn" onclick="resetPullingStage()" title="Reshuffle / Reset">
+                        <i class="fas fa-sync-alt"></i> Restart
+                    </button>
+                </div>
+                
+                <div class="deck-area">
+                     <div id="deck-pile" class="card-stack" onclick="drawCard()">
+                        <div class="deck-pattern"></div>
+                     </div>
+                </div>
+                
+                <div id="drawn-cards-container" class="drawn-grid"></div>
+                <button id="read-btn" class="btn-outline hidden" onclick="getAIReading()">✨ Reveal Prophecy ✨</button>
+            </div>
+        </section>
+
+        <!-- STEP 5: READING -->
+        <section id="step-5" class="step">
+            <h3 class="section-title">The Interpretation</h3>
+            <div id="loading" class="hidden">
+                <div style="text-align:center; margin:20px;">
+                    <i class="fas fa-spinner fa-spin" style="font-size:2rem; color:var(--accent);"></i>
+                    <p>Consulting the spirits...</p>
+                </div>
+            </div>
+            <div id="error-box" style="color:red; text-align:center;" class="hidden"></div>
+            <div id="ai-response"></div>
+            
+        <div class="footer-actions">
+                <!-- 1. Save -->
+                <button class="btn-secondary" onclick="copyReading()">
+                    <i class="fas fa-copy"></i> Save / Copy
+                </button>
+                
+                <!-- 2. Pull Again (Same Question) -->
+                <button class="btn-secondary" onclick="pullAgain()">
+                    <i class="fas fa-sync-alt"></i> Pull Again (Same Question)
+                </button>
+
+                <!-- 3. Ask New Question (Same Deck/Spread) -->
+                <button class="btn-secondary" onclick="askNewQuestion()">
+                    <i class="fas fa-question-circle"></i> Ask Another Question
+                </button>
+
+                <!-- 4. Full Reset (Home) -->
+                <button class="btn-secondary" onclick="location.reload()">
+                    <i class="fas fa-home"></i> Change Deck / Home
+                </button>
+                
+                <!-- Donate -->
+                <a href="#" class="donate-btn">
+                    <i class="fas fa-coffee"></i> Buy me a Coffee
+                </a>
+
+                <div class="social-links">
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                    <a href="#"><i class="fab fa-tiktok"></i></a>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
