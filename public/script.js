@@ -148,7 +148,7 @@ function startPulling() {
     goToStep(4);
 }
 
-// --- STEP 4: PULLING CARDS (WITH IMAGE SUPPORT) ---
+// --- STEP 4: PULLING CARDS (UPDATED WITH CORRECT LINK) ---
 function drawCard() {
     if (state.cardsDrawn.length >= state.cardsNeeded) return;
 
@@ -169,16 +169,30 @@ function drawCard() {
         cardDiv.classList.add('cross-center-2');
     }
 
-    // 3. IMAGE LOGIC
-    let cardContent = "";
-    if (state.deckTheme === 'Goth') {
-        // Convert "The sun" to "the_sun.png"
-        const fileName = cardName.toLowerCase().split(' ').join('_') + ".png";
-        // Ensure you have the folder: public/decks/goth/
-        cardContent = `<img src="decks/goth/${fileName}" class="card-img" alt="${cardName}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"> <div class="fallback-text" style="display:none">${cardName}</div>`;
-    } else {
-        cardContent = `<div class="card-name">${cardName}</div>`;
-    }
+    // 3. IMAGE LOGIC (Now includes "decks" in path!)
+    const assetsBaseUrl = "https://killer7wayes-lab.github.io/TarotAssets/";
+    
+    // Format card name: "The Fool" -> "the_fool.png"
+    const fileName = cardName.toLowerCase().split(' ').join('_') + ".png";
+    
+    // Format folder: "Anime" -> "anime"
+    const themeFolder = state.deckTheme.toLowerCase();
+    
+    // Construct full path: .../TarotAssets/decks/anime/the_fool.png
+    // CORRECTED HERE: added "decks/"
+    const imagePath = `${assetsBaseUrl}decks/${themeFolder}/${fileName}`;
+
+    const cardContent = `
+        <img 
+            src="${imagePath}" 
+            class="card-img" 
+            alt="${cardName}" 
+            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'"
+        >
+        <div class="fallback-text" style="display:none; width:100%; height:100%; align-items:center; justify-content:center; font-weight:bold; padding:5px;">
+            ${cardName}
+        </div>
+    `;
 
     // 4. Render Inner Card
     cardDiv.innerHTML = `
