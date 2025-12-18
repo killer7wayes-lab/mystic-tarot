@@ -33,7 +33,6 @@ function goToStep(stepNum) {
     // 1. Handle Back Button
     const backBtn = document.getElementById('back-btn');
     if (backBtn) {
-        // Hide back button only on Step 1
         if (currentStep === 1) {
             backBtn.classList.add('hidden');
         } else {
@@ -41,7 +40,7 @@ function goToStep(stepNum) {
         }
     }
 
-    // 2. Handle Theme Pill (The "Classic" text)
+    // 2. Handle Theme Pill
     const deckIndicator = document.getElementById('deck-indicator');
     if (deckIndicator) {
         if (currentStep === 1) {
@@ -91,7 +90,7 @@ function selectDeck(theme) {
     const themeText = document.getElementById('current-theme');
     if(themeText) themeText.innerText = theme;
     
-    // Show the Pill (since we are leaving home)
+    // Show the Pill
     const indicator = document.getElementById('deck-indicator');
     if(indicator) indicator.classList.remove('hidden');
     
@@ -108,7 +107,7 @@ function selectSpread(name, count) {
     
     // Set Layout Class for Grid
     const grid = document.getElementById('drawn-cards-container');
-    grid.className = 'drawn-grid'; // Reset class
+    grid.className = 'drawn-grid'; 
     
     if (count === 1) grid.classList.add('layout-1');
     else if (count === 3) grid.classList.add('layout-3');
@@ -139,7 +138,6 @@ function startPulling() {
         qValue = qInput.value.trim();
     }
     
-    // Logic: If empty, use default
     if (!qValue) {
         qValue = "General Guidance (No specific question asked)";
     }
@@ -148,12 +146,12 @@ function startPulling() {
     goToStep(4);
 }
 
-// --- STEP 4: PULLING CARDS (UPDATED FOR WEBP) ---
+// --- STEP 4: PULLING CARDS (FIXED PATHS HERE) ---
 function drawCard() {
     if (state.cardsDrawn.length >= state.cardsNeeded) return;
 
     const cardName = shuffledDeck.pop(); 
-    const isReversed = Math.random() < 0.4; // 40% chance
+    const isReversed = Math.random() < 0.4; 
     state.cardsDrawn.push({ name: cardName, isReversed: isReversed });
 
     const container = document.getElementById('drawn-cards-container');
@@ -164,37 +162,44 @@ function drawCard() {
     const positionNumber = state.cardsDrawn.length;
     cardDiv.classList.add(`pos-${positionNumber}`);
 
-    // 2. Special check for Celtic Cross Center
     if (state.spreadName.includes('Cross') && positionNumber === 2) {
         cardDiv.classList.add('cross-center-2');
     }
 
-    // 3. IMAGE LOGIC 
+    // --- PATH AND FILE FIXES START HERE ---
+    
     const assetsBaseUrl = "https://killer7wayes-lab.github.io/TarotAssets/";
+    const themeKey = state.deckTheme.toLowerCase();
     
-    // Format card name: "The Fool" -> "the_fool.webp"
-    // CHANGED: .png to .webp
-    const fileName = cardName.toLowerCase().split(' ').join('_') + ".webp";
+
+    // 2. Fix the nested folder paths based on your screenshots
+    let specificPath = "";
+    if (themeKey === 'anime') {
+        specificPath = "decks/anime/";
+    } else if (themeKey === 'classic') {
+        specificPath = "decks/anime/decks/classic/";
+    } else if (themeKey === 'goth') {
+        specificPath = "decks/anime/decks/goth/";
+    } else {
+        specificPath = "decks/classic/"; // Fallback
+    }
     
-    // Format folder: "Anime" -> "anime"
-    const themeFolder = state.deckTheme.toLowerCase();
-    
-    // Construct full path: .../TarotAssets/decks/anime/the_fool.webp
-    const imagePath = `${assetsBaseUrl}decks/${themeFolder}/${fileName}`;
+    const imagePath = `${assetsBaseUrl}${specificPath}${fileName}`;
+
+    // --- END PATH FIXES ---
 
     const cardContent = `
         <img 
             src="${imagePath}" 
             class="card-img" 
             alt="${cardName}" 
-            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'"
+            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'; console.log('Failed to load:', '${imagePath}')"
         >
         <div class="fallback-text" style="display:none; width:100%; height:100%; align-items:center; justify-content:center; font-weight:bold; padding:5px;">
             ${cardName}
         </div>
     `;
 
-    // 4. Render Inner Card
     cardDiv.innerHTML = `
         <div class="card-inner ${isReversed ? 'is-flipped' : ''}">
             ${cardContent}
@@ -204,11 +209,9 @@ function drawCard() {
     
     container.appendChild(cardDiv);
 
-    // Update Counter
     const remaining = state.cardsNeeded - state.cardsDrawn.length;
     document.getElementById('cards-left').innerText = remaining;
 
-    // Check if finished
     if (remaining === 0) {
         document.getElementById('deck-pile').style.display = 'none';
         const btn = document.getElementById('read-btn');
