@@ -13,9 +13,8 @@ const fullDeckData = [
 
 let currentStep = 1;
 let shuffledDeck = [];
-let isDrawing = false; // Prevents double-clicking spam
 let state = {
-    deckTheme: 'Classic', // Default theme
+    deckTheme: 'Classic',
     spreadName: '',
     cardsNeeded: 0,
     cardsDrawn: [],
@@ -24,22 +23,30 @@ let state = {
 
 // --- NAVIGATION LOGIC ---
 function goToStep(stepNum) {
+    // Hide all steps
     document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
-    const target = document.getElementById(`step-${stepNum}`);
-    if (target) target.classList.add('active');
+    // Show target step
+    document.getElementById(`step-${stepNum}`).classList.add('active');
     
     currentStep = stepNum;
     
-    // Toggle Back Button
+    // 1. Handle Back Button
     const backBtn = document.getElementById('back-btn');
     if (backBtn) {
-        backBtn.classList.toggle('hidden', currentStep === 1);
+        // Hide back button only on Step 1
+        if (currentStep === 1) {
+            backBtn.classList.add('hidden');
+        } else {
+            backBtn.classList.remove('hidden');
+        }
     }
 
-    // Toggle Theme Pill
+    // 2. Handle Theme Pill (The "Classic" text)
     const deckIndicator = document.getElementById('deck-indicator');
     if (deckIndicator) {
-        deckIndicator.classList.toggle('hidden', currentStep === 1);
+        if (currentStep === 1) {
+            deckIndicator.classList.add('hidden');
+        }
     }
 }
 
@@ -52,29 +59,39 @@ function goBack() {
 
 function resetPullingStage() {
     state.cardsDrawn = [];
-    isDrawing = false;
-    document.getElementById('drawn-cards-container').innerHTML = '';
     
+    // Reset UI
+    const container = document.getElementById('drawn-cards-container');
+    container.innerHTML = '';
+    
+    // Show Deck again
     const deckPile = document.getElementById('deck-pile');
     if(deckPile) deckPile.style.display = 'block';
     
+    // Hide Reveal Button
     const readBtn = document.getElementById('read-btn');
     if(readBtn) readBtn.classList.add('hidden');
     
+    // Reset Counter
     const countLabel = document.getElementById('cards-left');
     if(countLabel) countLabel.innerText = state.cardsNeeded;
     
+    // Reshuffle
     startBreathingExercise(); 
 }
 
 // --- STEP 1: THEME SELECTION ---
 function selectDeck(theme) {
     state.deckTheme = theme;
+    
+    // Update Theme CSS on Body
     document.body.className = theme.toLowerCase() + '-theme';
     
+    // Update the Pill Text
     const themeText = document.getElementById('current-theme');
     if(themeText) themeText.innerText = theme;
     
+    // Show the Pill (since we are leaving home)
     const indicator = document.getElementById('deck-indicator');
     if(indicator) indicator.classList.remove('hidden');
     
@@ -89,8 +106,9 @@ function selectSpread(name, count) {
     const countLabel = document.getElementById('cards-left');
     if(countLabel) countLabel.innerText = count;
     
+    // Set Layout Class for Grid
     const grid = document.getElementById('drawn-cards-container');
-    grid.className = 'drawn-grid'; 
+    grid.className = 'drawn-grid'; // Reset class
     
     if (count === 1) grid.classList.add('layout-1');
     else if (count === 3) grid.classList.add('layout-3');
@@ -105,8 +123,8 @@ function selectSpread(name, count) {
 
 // --- STEP 3: BREATHING & SHUFFLING ---
 function startBreathingExercise() {
+    // Fisher-Yates True Random Shuffle
     shuffledDeck = [...fullDeckData];
-    // Fisher-Yates Shuffle
     for (let i = shuffledDeck.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [shuffledDeck[i], shuffledDeck[j]] = [shuffledDeck[j], shuffledDeck[i]];
@@ -115,62 +133,67 @@ function startBreathingExercise() {
 
 function startPulling() {
     const qInput = document.getElementById('user-question');
-    let qValue = qInput ? qInput.value.trim() : "";
-    if (!qValue) qValue = "General Guidance (No specific question asked)";
+    let qValue = "";
+    
+    if (qInput) {
+        qValue = qInput.value.trim();
+    }
+    
+    // Logic: If empty, use default
+    if (!qValue) {
+        qValue = "General Guidance (No specific question asked)";
+    }
+    
     state.question = qValue;
     goToStep(4);
 }
 
-// --- STEP 4: PULLING CARDS ---
+// --- STEP 4: PULLING CARDS (UPDATED WITH FIXES) ---
 function drawCard() {
-    // 1. Safety Checks (Prevent double pull & over pull)
-    if (isDrawing) return; 
     if (state.cardsDrawn.length >= state.cardsNeeded) return;
 
-    isDrawing = true; // Lock the function
-    setTimeout(() => { isDrawing = false; }, 300); // Unlock after 300ms
-
     const cardName = shuffledDeck.pop(); 
-    if (!cardName) return; 
-
-    const isReversed = Math.random() < 0.4; 
+    const isReversed = Math.random() < 0.4; // 40% chance
     state.cardsDrawn.push({ name: cardName, isReversed: isReversed });
 
     const container = document.getElementById('drawn-cards-container');
     const cardDiv = document.createElement('div');
     cardDiv.className = 'tarot-card-display';
     
+    // 1. Add Position Class
     const positionNumber = state.cardsDrawn.length;
     cardDiv.classList.add(`pos-${positionNumber}`);
 
+    // 2. Special check for Celtic Cross Center
     if (state.spreadName.includes('Cross') && positionNumber === 2) {
         cardDiv.classList.add('cross-center-2');
     }
 
-    // --- PATH FIXING LOGIC (Based on your Screenshots) ---
+    // 3. IMAGE LOGIC (FIXED: WebP, Paths, Typo)
     const assetsBaseUrl = "https://killer7wayes-lab.github.io/TarotAssets/";
     const themeKey = state.deckTheme.toLowerCase();
     
-    // 1. Fix Typo: Ace of Swords double underscore
+    // FIX A: Standardize file name to webp
     let fileName = cardName.toLowerCase().split(' ').join('_') + ".webp";
+    
+    // FIX B: Handle the "ace__of_swords" double underscore typo
     if (fileName === "ace_of_swords.webp") {
-        fileName = "ace__of_swords.webp"; 
+        fileName = "ace__of_swords.webp";
     }
 
-    // 2. Fix Nested Folders
+    // FIX C: Handle the nested folder structure from your screenshot
     let specificPath = "";
     if (themeKey === 'anime') {
-        specificPath = "decks/anime/"; // Files are directly here
+        specificPath = "decks/anime/";
     } else if (themeKey === 'classic') {
-        specificPath = "decks/anime/decks/classic/"; // Nested deep
+        specificPath = "decks/anime/decks/classic/";
     } else if (themeKey === 'goth') {
-        specificPath = "decks/anime/decks/goth/"; // Nested deep
+        specificPath = "decks/anime/decks/goth/";
     } else {
         specificPath = "decks/classic/"; // Fallback
     }
     
     const imagePath = `${assetsBaseUrl}${specificPath}${fileName}`;
-    // ----------------------------------------------------
 
     const cardContent = `
         <img 
@@ -179,12 +202,12 @@ function drawCard() {
             alt="${cardName}" 
             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
         >
-        <div class="fallback-text" style="display:none; flex-direction:column; width:100%; height:100%; align-items:center; justify-content:center; padding:5px; background:#222; color:white; font-size:0.7rem; text-align:center;">
-            <span style="font-size:1rem; font-weight:bold; margin-bottom:5px;">${cardName}</span>
-            <span style="color:red; word-break:break-all;">Failed to load:<br>${specificPath}${fileName}</span>
+        <div class="fallback-text" style="display:none; width:100%; height:100%; align-items:center; justify-content:center; font-weight:bold; padding:5px; text-align:center;">
+            ${cardName}
         </div>
     `;
 
+    // 4. Render Inner Card
     cardDiv.innerHTML = `
         <div class="card-inner ${isReversed ? 'is-flipped' : ''}">
             ${cardContent}
@@ -196,17 +219,14 @@ function drawCard() {
 
     // Update Counter
     const remaining = state.cardsNeeded - state.cardsDrawn.length;
-    const countLabel = document.getElementById('cards-left');
-    if(countLabel) countLabel.innerText = remaining;
+    document.getElementById('cards-left').innerText = remaining;
 
     // Check if finished
     if (remaining === 0) {
         document.getElementById('deck-pile').style.display = 'none';
         const btn = document.getElementById('read-btn');
-        if(btn) {
-            btn.classList.remove('hidden');
-            btn.style.animation = "fadeIn 1s";
-        }
+        btn.classList.remove('hidden');
+        btn.style.animation = "fadeIn 1s";
     }
 }
 
@@ -217,9 +237,9 @@ async function getAIReading() {
     const result = document.getElementById('ai-response');
     const errorBox = document.getElementById('error-box');
     
-    if(loading) loading.classList.remove('hidden');
-    if(result) result.innerHTML = "";
-    if(errorBox) errorBox.classList.add('hidden');
+    loading.classList.remove('hidden');
+    result.innerHTML = "";
+    errorBox.classList.add('hidden');
 
     try {
         const response = await fetch('/api/reading', {
@@ -239,24 +259,24 @@ async function getAIReading() {
         }
         
         const data = await response.json();
-        if(loading) loading.classList.add('hidden');
-        if(result) result.innerHTML = data.reading; 
+        loading.classList.add('hidden');
+        result.innerHTML = data.reading; 
 
     } catch (e) {
-        if(loading) loading.classList.add('hidden');
-        if(errorBox) {
-            errorBox.classList.remove('hidden');
-            errorBox.innerText = "The Oracle is currently silent. Please try again.";
-        }
+        loading.classList.add('hidden');
+        errorBox.classList.remove('hidden');
+        errorBox.innerText = "The Oracle is currently silent. Please try again.";
+        console.error(e);
     }
 }
 
 // --- FOOTER BUTTONS ---
+
 function copyReading() {
-    const result = document.getElementById('ai-response');
-    if(result) {
-        navigator.clipboard.writeText(result.innerText).then(() => alert("Saved!"));
-    }
+    const text = document.getElementById('ai-response').innerText;
+    navigator.clipboard.writeText(text).then(() => {
+        alert("Reading saved to clipboard!");
+    });
 }
 
 function pullAgain() {
@@ -271,24 +291,3 @@ function askNewQuestion() {
     state.question = "";
     goToStep(3);
 }
-
-// --- INITIALIZATION (SAFE VERSION) ---
-document.addEventListener('DOMContentLoaded', () => {
-    // 1. DECK CLICK (Uses .onclick to prevent double-firing)
-    const deckPile = document.getElementById('deck-pile');
-    if (deckPile) {
-        deckPile.onclick = drawCard; 
-    }
-    
-    // 2. REVEAL BUTTON
-    const readBtn = document.getElementById('read-btn');
-    if (readBtn) {
-        readBtn.onclick = getAIReading;
-    }
-
-    // 3. BACK BUTTON
-    const backBtn = document.getElementById('back-btn');
-    if (backBtn) {
-        backBtn.onclick = goBack;
-    }
-});
