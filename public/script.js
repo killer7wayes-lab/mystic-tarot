@@ -23,29 +23,19 @@ let state = {
 
 // --- NAVIGATION LOGIC ---
 function goToStep(stepNum) {
-    // Hide all steps
     document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
-    // Show target step
     document.getElementById(`step-${stepNum}`).classList.add('active');
-    
     currentStep = stepNum;
     
-    // 1. Handle Back Button
     const backBtn = document.getElementById('back-btn');
     if (backBtn) {
-        if (currentStep === 1) {
-            backBtn.classList.add('hidden');
-        } else {
-            backBtn.classList.remove('hidden');
-        }
+        if (currentStep === 1) backBtn.classList.add('hidden');
+        else backBtn.classList.remove('hidden');
     }
 
-    // 2. Handle Theme Pill
     const deckIndicator = document.getElementById('deck-indicator');
     if (deckIndicator) {
-        if (currentStep === 1) {
-            deckIndicator.classList.add('hidden');
-        }
+        if (currentStep === 1) deckIndicator.classList.add('hidden');
     }
 }
 
@@ -58,42 +48,27 @@ function goBack() {
 
 function resetPullingStage() {
     state.cardsDrawn = [];
-    
-    // Reset UI
-    const container = document.getElementById('drawn-cards-container');
-    container.innerHTML = '';
-    
-    // Show Deck again
+    document.getElementById('drawn-cards-container').innerHTML = '';
     const deckPile = document.getElementById('deck-pile');
     if(deckPile) deckPile.style.display = 'block';
     
-    // Hide Reveal Button
     const readBtn = document.getElementById('read-btn');
     if(readBtn) readBtn.classList.add('hidden');
     
-    // Reset Counter
     const countLabel = document.getElementById('cards-left');
     if(countLabel) countLabel.innerText = state.cardsNeeded;
     
-    // Reshuffle
     startBreathingExercise(); 
 }
 
 // --- STEP 1: THEME SELECTION ---
 function selectDeck(theme) {
     state.deckTheme = theme;
-    
-    // Update Theme CSS on Body
     document.body.className = theme.toLowerCase() + '-theme';
-    
-    // Update the Pill Text
     const themeText = document.getElementById('current-theme');
     if(themeText) themeText.innerText = theme;
-    
-    // Show the Pill
     const indicator = document.getElementById('deck-indicator');
     if(indicator) indicator.classList.remove('hidden');
-    
     goToStep(2);
 }
 
@@ -101,11 +76,8 @@ function selectDeck(theme) {
 function selectSpread(name, count) {
     state.spreadName = name;
     state.cardsNeeded = count;
+    document.getElementById('cards-left').innerText = count;
     
-    const countLabel = document.getElementById('cards-left');
-    if(countLabel) countLabel.innerText = count;
-    
-    // Set Layout Class for Grid
     const grid = document.getElementById('drawn-cards-container');
     grid.className = 'drawn-grid'; 
     
@@ -122,7 +94,6 @@ function selectSpread(name, count) {
 
 // --- STEP 3: BREATHING & SHUFFLING ---
 function startBreathingExercise() {
-    // Fisher-Yates True Random Shuffle
     shuffledDeck = [...fullDeckData];
     for (let i = shuffledDeck.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -132,25 +103,19 @@ function startBreathingExercise() {
 
 function startPulling() {
     const qInput = document.getElementById('user-question');
-    let qValue = "";
-    
-    if (qInput) {
-        qValue = qInput.value.trim();
-    }
-    
-    if (!qValue) {
-        qValue = "General Guidance (No specific question asked)";
-    }
-    
+    let qValue = qInput ? qInput.value.trim() : "";
+    if (!qValue) qValue = "General Guidance (No specific question asked)";
     state.question = qValue;
     goToStep(4);
 }
 
-// --- STEP 4: PULLING CARDS (FIXED PATHS HERE) ---
+// --- STEP 4: PULLING CARDS (WITH PATH FIXES) ---
 function drawCard() {
     if (state.cardsDrawn.length >= state.cardsNeeded) return;
 
     const cardName = shuffledDeck.pop(); 
+    if (!cardName) return; // Safety check
+
     const isReversed = Math.random() < 0.4; 
     state.cardsDrawn.push({ name: cardName, isReversed: isReversed });
 
@@ -158,7 +123,6 @@ function drawCard() {
     const cardDiv = document.createElement('div');
     cardDiv.className = 'tarot-card-display';
     
-    // 1. Add Position Class
     const positionNumber = state.cardsDrawn.length;
     cardDiv.classList.add(`pos-${positionNumber}`);
 
@@ -166,13 +130,17 @@ function drawCard() {
         cardDiv.classList.add('cross-center-2');
     }
 
-    // --- PATH AND FILE FIXES START HERE ---
-    
+    // --- PATH FIXING LOGIC ---
     const assetsBaseUrl = "https://killer7wayes-lab.github.io/TarotAssets/";
     const themeKey = state.deckTheme.toLowerCase();
     
+    // 1. Fix Typo: Ace of Swords double underscore
+    let fileName = cardName.toLowerCase().split(' ').join('_') + ".webp";
+    if (fileName === "ace_of_swords.webp") {
+        fileName = "ace__of_swords.webp"; 
+    }
 
-    // 2. Fix the nested folder paths based on your screenshots
+    // 2. Fix Folders: Handle nested classic/goth folders inside anime
     let specificPath = "";
     if (themeKey === 'anime') {
         specificPath = "decks/anime/";
@@ -181,19 +149,18 @@ function drawCard() {
     } else if (themeKey === 'goth') {
         specificPath = "decks/anime/decks/goth/";
     } else {
-        specificPath = "decks/classic/"; // Fallback
+        specificPath = "decks/classic/"; 
     }
     
     const imagePath = `${assetsBaseUrl}${specificPath}${fileName}`;
-
-    // --- END PATH FIXES ---
+    // -------------------------
 
     const cardContent = `
         <img 
             src="${imagePath}" 
             class="card-img" 
             alt="${cardName}" 
-            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'; console.log('Failed to load:', '${imagePath}')"
+            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
         >
         <div class="fallback-text" style="display:none; width:100%; height:100%; align-items:center; justify-content:center; font-weight:bold; padding:5px;">
             ${cardName}
@@ -210,13 +177,16 @@ function drawCard() {
     container.appendChild(cardDiv);
 
     const remaining = state.cardsNeeded - state.cardsDrawn.length;
-    document.getElementById('cards-left').innerText = remaining;
+    const countLabel = document.getElementById('cards-left');
+    if(countLabel) countLabel.innerText = remaining;
 
     if (remaining === 0) {
         document.getElementById('deck-pile').style.display = 'none';
         const btn = document.getElementById('read-btn');
-        btn.classList.remove('hidden');
-        btn.style.animation = "fadeIn 1s";
+        if(btn) {
+            btn.classList.remove('hidden');
+            btn.style.animation = "fadeIn 1s";
+        }
     }
 }
 
@@ -227,9 +197,9 @@ async function getAIReading() {
     const result = document.getElementById('ai-response');
     const errorBox = document.getElementById('error-box');
     
-    loading.classList.remove('hidden');
-    result.innerHTML = "";
-    errorBox.classList.add('hidden');
+    if(loading) loading.classList.remove('hidden');
+    if(result) result.innerHTML = "";
+    if(errorBox) errorBox.classList.add('hidden');
 
     try {
         const response = await fetch('/api/reading', {
@@ -249,24 +219,27 @@ async function getAIReading() {
         }
         
         const data = await response.json();
-        loading.classList.add('hidden');
-        result.innerHTML = data.reading; 
+        if(loading) loading.classList.add('hidden');
+        if(result) result.innerHTML = data.reading; 
 
     } catch (e) {
-        loading.classList.add('hidden');
-        errorBox.classList.remove('hidden');
-        errorBox.innerText = "The Oracle is currently silent. Please try again.";
+        if(loading) loading.classList.add('hidden');
+        if(errorBox) {
+            errorBox.classList.remove('hidden');
+            errorBox.innerText = "The Oracle is currently silent. Please try again.";
+        }
         console.error(e);
     }
 }
 
 // --- FOOTER BUTTONS ---
-
 function copyReading() {
-    const text = document.getElementById('ai-response').innerText;
-    navigator.clipboard.writeText(text).then(() => {
-        alert("Reading saved to clipboard!");
-    });
+    const result = document.getElementById('ai-response');
+    if(result) {
+        navigator.clipboard.writeText(result.innerText).then(() => {
+            alert("Reading saved to clipboard!");
+        });
+    }
 }
 
 function pullAgain() {
@@ -281,3 +254,24 @@ function askNewQuestion() {
     state.question = "";
     goToStep(3);
 }
+
+// --- INITIALIZATION (THIS WAS MISSING!) ---
+document.addEventListener('DOMContentLoaded', () => {
+    // Attach click listener to the Deck Pile
+    const deckPile = document.getElementById('deck-pile');
+    if (deckPile) {
+        deckPile.addEventListener('click', drawCard);
+    }
+    
+    // Attach listener to Reveal Button
+    const readBtn = document.getElementById('read-btn');
+    if (readBtn) {
+        readBtn.addEventListener('click', getAIReading);
+    }
+
+    // Attach listener to Back Button
+    const backBtn = document.getElementById('back-btn');
+    if (backBtn) {
+        backBtn.addEventListener('click', goBack);
+    }
+});
