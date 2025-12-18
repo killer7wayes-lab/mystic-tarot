@@ -148,7 +148,7 @@ function startPulling() {
     goToStep(4);
 }
 
-// --- STEP 4: PULLING CARDS (UPDATED WITH CORRECT LINK) ---
+// --- STEP 4: PULLING CARDS (UPDATED FOR WEBP) ---
 function drawCard() {
     if (state.cardsDrawn.length >= state.cardsNeeded) return;
 
@@ -169,17 +169,17 @@ function drawCard() {
         cardDiv.classList.add('cross-center-2');
     }
 
-    // 3. IMAGE LOGIC (Now includes "decks" in path!)
+    // 3. IMAGE LOGIC 
     const assetsBaseUrl = "https://killer7wayes-lab.github.io/TarotAssets/";
     
-    // Format card name: "The Fool" -> "the_fool.png"
-    const fileName = cardName.toLowerCase().split(' ').join('_') + ".png";
+    // Format card name: "The Fool" -> "the_fool.webp"
+    // CHANGED: .png to .webp
+    const fileName = cardName.toLowerCase().split(' ').join('_') + ".webp";
     
     // Format folder: "Anime" -> "anime"
     const themeFolder = state.deckTheme.toLowerCase();
     
-    // Construct full path: .../TarotAssets/decks/anime/the_fool.png
-    // CORRECTED HERE: added "decks/"
+    // Construct full path: .../TarotAssets/decks/anime/the_fool.webp
     const imagePath = `${assetsBaseUrl}decks/${themeFolder}/${fileName}`;
 
     const cardContent = `
