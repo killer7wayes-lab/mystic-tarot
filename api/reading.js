@@ -15,7 +15,6 @@ module.exports = async (req, res) => {
         const { question, spread, cards, deckTheme } = req.body;
 
         // --- 2. DEFINE SPREAD POSITIONS ---
-        // This tells the AI what each card slot actually means
         const spreadMeanings = {
             "1 Card Pull": ["The Insight"],
             "3 Card Spread": ["The Past", "The Present", "The Future"],
@@ -27,68 +26,68 @@ module.exports = async (req, res) => {
             "Celtic Cross": ["1. The Heart of the Matter", "2. The Challenge (Crosses You)", "3. The Root (Unconscious)", "4. The Past", "5. The Crown (Conscious Goal)", "6. The Future", "7. Self Perception", "8. Environment", "9. Hopes & Fears", "10. The Outcome"]
         };
 
-        // Get meanings for the selected spread (or default to numbered list)
         const positions = spreadMeanings[spread] || [];
 
-        // Format the list of cards for the AI
-        // Example: "1. The Past: The Fool (Reversed)"
+        // Format cards
         const formattedCards = cards.map((c, i) => {
             const positionName = positions[i] || `Card ${i + 1}`;
-            const status = c.isReversed ? "REVERSED (Blocked Energy/Internal)" : "UPRIGHT";
+            const status = c.isReversed ? "REVERSED (Internal Block)" : "UPRIGHT";
             return `- **${positionName}**: ${c.name} *${status}*`;
         }).join('\n');
 
 
-        // --- 3. DEFINE PERSONAS (THE VIBE) ---
+        // --- 3. DEFINE PERSONAS (The "Flavor") ---
         let systemPersona = "";
 
         if (deckTheme === "Anime") {
             systemPersona = `You are a spirited "Fate Weaver" from an anime world. 
-            Your tone is energetic, empowering, and slightly dramatic (like a Shonen mentor or Magical Girl guide).
-            Use metaphors about "training arcs," "unlocking potential," "bonds," and "destiny."
-            If a card is negative, frame it as a "challenge to overcome" to level up.`;
+            Your tone is energetic, empowering, and dramatic. 
+            Always frame challenges as "training arcs" or "boss battles" that the user is destined to win.`;
         } 
         else if (deckTheme === "Goth") {
             systemPersona = `You are the "Oracle of the Void." 
-            Your tone is dark, poetic, mysterious, and brutally honest. 
-            Focus on "shadow work," the subconscious, and the uncomfortable truths. 
-            Use words like "abyss," "echoes," "silence," and "midnight." Do not sugarcoat, but be deep.`;
+            Your tone is dark and poetic, but ultimately protective.
+            You help the user find the light within the darkness. Even the abyss has a bottom, and you are the guide up.`;
         } 
         else { // Classic
-            systemPersona = `You are a wise, ancient Tarot Reader. 
-            Your tone is soothing, mystical, empathetic, and grounded. 
-            You speak with the wisdom of the ages. Focus on clarity, balance, and spiritual growth.`;
+            systemPersona = `You are a wise, benevolent Tarot Master. 
+            Your tone is soothing, optimistic, and encouraging. 
+            You focus on growth, healing, and the abundance coming into the user's life.`;
         }
 
 
-        // --- 4. THE FINAL PROMPT ---
+        // --- 4. THE "POSITIVE VIBES" PROMPT ---
         const finalPrompt = `
         ${systemPersona}
 
         **CONTEXT:**
-        User Question: "${question || "General Guidance"}"
-        Spread Type: "${spread}"
+        - User Question: "${question || "General Guidance"}"
+        - Spread Type: "${spread}"
         
         **THE CARDS DRAWN:**
         ${formattedCards}
 
-        **INSTRUCTIONS:**
-        1. Provide a cohesive reading connecting these cards. Do not just list them one by one—weave a story.
-        2. **Crucial:** Pay attention to the "Position" of the card (e.g., if The Tower is in "Past", the disaster already happened).
-        3. **Crucial:** If a card is REVERSED, interpret it as internal struggle, delayed energy, or a warning.
-        4. Format the output using HTML tags for beauty:
-           - Use <h3> for section titles (e.g., <h3>The Vibe</h3>).
-           - Use <strong> for card names.
-           - Use <p> for paragraphs.
-           - Keep the total reading under 250 words. Concise but powerful.
+        **YOUR MISSION (CRITICAL):**
+        Provide a highly detailed, **uplifting, and empowering** reading. 
+        **Rule #1:** Never predict doom or failure. If a card is negative (like Death or Tower), frame it as a "necessary release" or an "exciting new beginning." 
+        **Rule #2:** The user must feel hopeful and capable of changing their fate after reading this.
         
-        Structure your response like this:
-        <h3>The Energy</h3>
-        <p>...summary of the situation...</p>
-        <h3>The Cards</h3>
-        <p>...interpretation of the specific cards in their positions...</p>
-        <h3>The Guidance</h3>
-        <p>...final advice based on the persona...</p>
+        **FORMATTING:**
+        Use HTML tags (<h3>, <p>, <strong>).
+        
+        1. <h3>The Heart of the Matter</h3>
+           <p>A direct, 3-sentence summary. Focus on the potential for success.</p>
+
+        2. <h3>Detailed Interpretation</h3>
+           <p>Analyze each card. Connect them together to tell a story of growth.
+           <strong>Crucial:</strong> If a card is Reversed, explain it as a temporary delay that the user can easily fix, not a permanent block.</p>
+
+        3. <h3>Actionable Guidance</h3>
+           <p>Provide 2 concrete, positive actions the user can take right now to manifest their best outcome.</p>
+
+        **CONSTRAINTS:**
+        - Length: Approx 400-600 words.
+        - Tone: Encouraging, Warm, insightful.
         `;
 
         // --- 5. CALL GROQ API ---
@@ -99,13 +98,13 @@ module.exports = async (req, res) => {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                model: "llama-3.3-70b-versatile", // The smart model
+                model: "llama-3.3-70b-versatile", 
                 messages: [
                     { role: "system", content: finalPrompt },
-                    { role: "user", content: "Read my fate." }
+                    { role: "user", content: "Interpret my spread with hope." }
                 ],
-                temperature: 0.7, // A bit creative, but not chaotic
-                max_tokens: 600
+                temperature: 0.7, 
+                max_tokens: 1000
             })
         });
 
