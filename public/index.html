@@ -3,13 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SoLunara Tarot</title>
+    <title>SoLunara Tarot | Free Anime & Goth Tarot Readings</title>
+
+    <meta name="google-site-verification" content="googleaeb6066c3b1f360e" />
+
+    <meta name="description" content="Get free, honest tarot readings with SoLunara's Anime and Goth decks. Powered by true random shuffling for the guidance you actually need.">
+    <meta name="keywords" content="free tarot, anime tarot, goth tarot, online tarot reading, solunara tarot">
+    <link rel="canonical" href="https://solunara-tarot.vercel.app/">
+
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="SoLunara Tarot | Free Anime & Goth Readings">
+    <meta property="og:description" content="Ask your specific question and let the fates guide you. Free, honest, and ad-free readings. ✨">
+    <meta property="og:image" content="https://solunara-tarot.vercel.app/og-image.jpg">
+    <meta property="og:url" content="https://solunara-tarot.vercel.app/">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <script>
+      window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+    </script>
+    <script defer src="/_vercel/insights/script.js"></script>
+
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
 
-    <!-- 1. CLASSIC BACKGROUND -->
     <div class="theme-bg classic-bg active">
         <div class="celestial-wrapper">
             <i class="fas fa-sun big-sun"></i>
@@ -20,17 +38,14 @@
         </div>
     </div>
 
-    <!-- 2. ANIME BACKGROUND -->
     <div class="theme-bg anime-bg">
         <i class="fas fa-certificate anime-sparkle s-1"></i>
         <i class="fas fa-certificate anime-sparkle s-2"></i>
         <i class="fas fa-cloud anime-cloud"></i>
     </div>
 
-    <!-- 3. GOTH BACKGROUND -->
     <div class="theme-bg goth-bg"></div>
 
-    <!-- MAIN APP CONTAINER -->
     <div class="main-glass-panel">
         <header>
             <button id="back-btn" class="nav-btn hidden" onclick="goBack()">
@@ -44,7 +59,6 @@
             </div>
         </header>
 
-        <!-- STEP 1: CHOOSE DECK -->
         <section id="step-1" class="step active">
             <h3 class="section-title">
                 <span style="font-family: 'Playfair Display', serif; font-style: italic; font-size: 0.9em; display:block; margin-bottom:5px; opacity:0.8;">Let The Cards Guide You</span>
@@ -72,7 +86,6 @@
             </div>
         </section>
 
-        <!-- STEP 2: SPREAD -->
         <section id="step-2" class="step">
             <h3 class="section-title">Select Spread Type</h3>
             <div class="list-options">
@@ -87,7 +100,6 @@
             </div>
         </section>
 
-        <!-- STEP 3: BREATHE -->
         <section id="step-3" class="step">
             <div class="meditation-container">
                 <div class="eye-wrapper">
@@ -104,7 +116,6 @@
             </div>
         </section>
 
-        <!-- STEP 4: PULL CARDS -->
         <section id="step-4" class="step">
             <div class="ritual-container">
                 <h3 class="ritual-title">The Fates Await</h3>
@@ -126,7 +137,6 @@
             </div>
         </section>
 
-        <!-- STEP 5: READING -->
         <section id="step-5" class="step">
             <h3 class="section-title">The Interpretation</h3>
             <div id="loading" class="hidden">
@@ -139,28 +149,23 @@
             <div id="ai-response"></div>
             
         <div class="footer-actions">
-                <!-- 1. Save -->
                 <button class="btn-secondary" onclick="copyReading()">
                     <i class="fas fa-copy"></i> Save / Copy
                 </button>
                 
-                <!-- 2. Pull Again (Same Question) -->
                 <button class="btn-secondary" onclick="pullAgain()">
                     <i class="fas fa-sync-alt"></i> Pull Again (Same Question)
                 </button>
 
-                <!-- 3. Ask New Question (Same Deck/Spread) -->
                 <button class="btn-secondary" onclick="askNewQuestion()">
                     <i class="fas fa-question-circle"></i> Ask Another Question
                 </button>
 
-                <!-- 4. Full Reset (Home) -->
                 <button class="btn-secondary" onclick="location.reload()">
                     <i class="fas fa-home"></i> Change Deck / Home
                 </button>
                 
-                <!-- Donate -->
-               <a href="https://www.patreon.com/cw/TarotSolunara/shop" class="donate-btn" target="_blank">
+                <a href="https://www.patreon.com/cw/TarotSolunara/shop" class="donate-btn" target="_blank">
     <i class="fas fa-coffee"></i> Buy me a Coffee
 </a>
             
